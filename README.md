@@ -93,13 +93,14 @@ The system is structured to support future enhancements such as a graphical inte
 ---
 
 ## Repository Structure
+```
 /src
   /aspects
   /core
   /storage
   /validation
   /utils
-
+```
 ---
 
 ## License

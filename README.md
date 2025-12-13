@@ -103,4 +103,10 @@ The system is structured to support future enhancements such as a graphical inte
 ---
 
 ## License
-This project is provided for educational and portfolio demonstration purposes.
+© 2025 James Stevens. All rights reserved.
+
+This source code is provided for educational, evaluation, and portfolio review purposes.
+Permission is granted to clone and run the code locally for non-commercial review.
+
+No permission is granted to copy, modify, redistribute, or use this code in
+commercial or production systems without explicit written consent from the author.

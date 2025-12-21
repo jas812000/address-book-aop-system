@@ -19,3 +19,13 @@ out/
 *.swp
 *~
 *.save
+
+# Build output
+bin/
+
+# IntelliJ module files
+*.iml
+
+# Eclipse backup artifacts
+*.bak
+*.ecl.bak

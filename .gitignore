@@ -29,3 +29,10 @@ bin/
 # Eclipse backup artifacts
 *.bak
 *.ecl.bak
+
+# Runtime folders (keep directories via .gitkeep)
+data/*
+log/*
+!data/.gitkeep
+!log/.gitkeep
+

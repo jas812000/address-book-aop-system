@@ -1,115 +1,136 @@
-# Address Book System with Aspect-Oriented Logging and Validation
+# Address Book AOP System
 
 ## Overview
-This project implements a modular command-line Address Book system in Java, designed to demonstrate backend architecture principles and the practical use of Aspect-Oriented Programming (AOP). The system supports adding, updating, deleting, searching, and displaying contact records while cleanly separating core business logic from cross-cutting concerns such as logging, validation, exception handling, and system notifications.
+The Address Book AOP System is a modular Java command-line backend application designed to manage a persistent address book of contacts. The system supports adding, updating, deleting, and displaying contacts while enforcing validation and consistency rules.
 
-AspectJ is used to intercept key operations and apply these concerns without polluting the core application code, resulting in a maintainable and extensible design.
+The project emphasizes backend engineering concerns such as domain modeling, validation, file-based persistence, and separation of cross-cutting concerns using Aspect-Oriented Programming (AOP). Rather than relying on a database, all data is stored using structured CSV files, making the system portable, deterministic, and easy to test.
 
 ---
 
-## Key Features
-- Create, update, delete, search, and display address book contacts
-- Structured contact data (name, address, city, state, ZIP, phone)
-- File-based persistence with custom parsing and formatting
-- Input normalization and field-level validation
-- Centralized exception handling
-- Audit logging for contact updates and deletions
-- System message and notification handling via aspects
+## Features
+- Automatic loading of contacts at application startup  
+- Create, update, delete, and display contact records  
+- Structured CSV-based persistence  
+- Input normalization and validation  
+- Aspect-Oriented Programming for cross-cutting concerns  
+- Centralized controller coordinating domain logic  
+- Graceful handling of malformed or missing data files  
+- Runnable standalone JAR via Maven
 
 ---
 
 ## Architecture Overview
-The system is organized into clearly defined components:
+The system follows a layered, object-oriented architecture with AspectJ-based cross-cutting concerns:
 
-### Core Application
-- `AddressBook` – Manages in-memory contact storage
-- `AddressBookController` – Coordinates user actions and system operations
-- `Main` / `AddressBookApp` – Application entry points
-- `Contact` – Domain model representing a contact record
-
-### Input, Parsing, and Storage
-- `ContactInputHandler` – Handles user input
-- `AddressBookStorage` – Loads and saves contacts
-- `FileLoader`, `FileSaver` – File I/O utilities
-- `ContactLineParser`, `FileParser`, `LineParser` – Parsing logic
-- `ContactFormatter`, `ContactCSVFormatter`, `TextFormatter` – Output formatting
-
-### Validation & Integrity
-- `FieldValidator`, `StringValidator`
-- `ContactIntegrityValidator`
-- `ContactNormalizer`
-
-### Aspect-Oriented Components (AspectJ)
-- Add, update, and delete logging aspects
-- Validation and validation logging aspects
-- Exception handling aspect
-- Display and notification aspects
-- System path and message logging aspects
-
-These aspects encapsulate cross-cutting behavior and apply it declaratively via pointcuts and advice.
+### Controller / Application Layer
+- Coordinates user interaction, menu flow, and orchestration of address book operations.
 
 ---
 
-## Aspect-Oriented Design
-AspectJ is used to modularize concerns that would otherwise be scattered across the codebase:
+## Domain Model  
 
-- **Logging:** Records contact updates and deletions to an audit file
-- **Validation:** Intercepts operations to enforce data correctness
-- **Exception Handling:** Centralizes error handling and messaging
-- **Notifications & Display:** Standardizes user-facing output
-- **System Tracing:** Logs application paths and execution context
+### Contact  
+- Encapsulates contact data such as name, address, phone number, city, state, and ZIP code.
 
-This approach improves readability, reduces duplication, and makes the system easier to extend or refactor.
+### Contact State Management  
+Contacts follow a controlled lifecycle governed by validation rules:
+- Valid contact fields are required for creation and update  
+- Invalid or malformed records are rejected  
+- Updates preserve data integrity  
+- Delete operations are explicit and irreversible  
 
----
-
-## Tools & Technologies
-- Java
-- AspectJ
-- Command-line interface
-- File-based persistence
-- Object-Oriented Programming (OOP)
-- Aspect-Oriented Programming (AOP)
+Validation rules are enforced consistently through AspectJ aspects prior to state modification.
 
 ---
 
-## Artifacts
-- Java source files for core application logic
-- AspectJ source files for cross-cutting concerns
-- Audit log output files capturing update and delete operations
+## Persistence Layer  
+- File-based storage using CSV format  
+- Explicit parsing and formatting logic  
+- Deterministic load and save behavior  
 
 ---
 
-## Outcome
-This project demonstrates:
-- Strong separation of concerns through AOP
-- Modular backend design
-- Practical logging and validation strategies
-- Maintainable error handling architecture
-- Clean organization of parsing, formatting, and persistence logic
+## Validation & Cross-Cutting Concerns (AOP)  
 
-The system is structured to support future enhancements such as a graphical interface or database-backed persistence without requiring architectural changes.
+AspectJ aspects are used to enforce validation, logging, and error handling without polluting core business logic.
 
 ---
 
-## Repository Structure
+## Data Persistence Model  
+The address book is stored as a CSV file located in the data directory:
 ```
-/src
-  /aspects
-  /core
-  /storage
-  /validation
-  /utils
+data/address_book.csv
 ```
+
+Each contact is represented as a single CSV record with structured fields. The system automatically loads the file at startup and writes changes back to disk when modifications occur.
+
+If the file does not exist, the application initializes an empty address book and creates the file on first save.
+
+---
+
+## Error Handling Strategy
+The system enforces correctness and resilience through:
+
+- Defensive parsing of CSV input  
+- Graceful handling of malformed records  
+- Explicit validation of required fields  
+- Centralized exception handling via aspects  
+- Non-fatal handling of file I/O failures  
+
+Malformed input does not crash the application and is safely handled.
+
+---
+
+## Build & Run
+The project is a static site and does not require a backend or build step.
+
+### Prerequisites
+- Java 17+  
+- Maven 3.8+
+
+### Build  
+```bash
+mvn clean package  
+```
+
+### Run (Standalone JAR)  
+```bash
+java -jar target/address-book-aop-system-1.0.0.jar  
+```
+
+The CLI menu provides options to:
+- Add a contact  
+- Update an existing contact  
+- Delete a contact  
+- Display all contacts  
+- Exit the application  
+
+---
+
+## Tools & Technologies  
+- **Language**: Java 17  
+Build Tool**: Maven  
+- **Aspect-Oriented Programming**: AspectJ  
+- **Testing**: JUnit 5  
+- **Persistence**: CSV file-based storage  
+- **Architecture Style**: Layered backend architecture  
+
+---
+
+## Purpose  
+This project serves as a backend engineering case study demonstrating:
+- Separation of concerns using AOP  
+- Clean domain modeling  
+- Deterministic file-based persistence  
+- Defensive input validation  
+- Controlled state transitions  
+- Build tooling and runnable artifacts with Maven  
+
 ---
 
 ## License
-© 2025 James Stevens. All rights reserved.
-
-This source code is provided for educational, evaluation, and portfolio review purposes.
-Permission is granted to clone and run the code locally for non-commercial review.
-
-No permission is granted to copy, modify, redistribute, or use this code in
-commercial or production systems without explicit written consent from the author.
+This project is licensed under the MIT License.
+See the [LICENSE](LICENSE) file for details.
 
 ---
+

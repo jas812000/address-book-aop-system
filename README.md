@@ -29,10 +29,10 @@ The system follows a layered, object-oriented architecture with AspectJ-based cr
 
 ## Domain Model  
 
-### Contact  
+#### Contact  
 - Encapsulates contact data such as name, address, phone number, city, state, and ZIP code.
 
-### Contact State Management  
+#### Contact State Management  
 Contacts follow a controlled lifecycle governed by validation rules:
 - Valid contact fields are required for creation and update  
 - Invalid or malformed records are rejected  
@@ -41,18 +41,48 @@ Contacts follow a controlled lifecycle governed by validation rules:
 
 Validation rules are enforced consistently through AspectJ aspects prior to state modification.
 
----
-
-## Persistence Layer  
+### Persistence Layer  
 - File-based storage using CSV format  
 - Explicit parsing and formatting logic  
 - Deterministic load and save behavior  
 
----
-
-## Validation & Cross-Cutting Concerns (AOP)  
+### Validation & Cross-Cutting Concerns (AOP)  
 
 AspectJ aspects are used to enforce validation, logging, and error handling without polluting core business logic.
+
+---
+
+## Repository Structure
+
+The project follows the standard Maven directory layout:
+```
+address-book-aop-system/
+├── pom.xml
+├── README.md
+├── LICENSE
+├── docs/
+│   └── sample-address-book.csv
+└── src/
+    ├── main/
+    │   ├── java/
+    │   │   ├── address_book/
+    │   │   ├── address_utils/
+    │   │   ├── io/
+    │   │   ├── utilities/
+    │   │   └── validators/
+    │   └── aspectj/
+    │       └── address_aspects/
+    └── test/
+        └── java/
+            ├── address_book/
+            ├── address_utils/
+            └── validators/
+```
+
+Notes:
+- Production code lives under `src/main/java`
+- AspectJ aspects live under `src/main/aspectj`
+- Tests live under `src/test/java` and run with `mvn test`
 
 ---
 
@@ -82,7 +112,6 @@ Malformed input does not crash the application and is safely handled.
 ---
 
 ## Build & Run
-The project is a static site and does not require a backend or build step.
 
 ### Prerequisites
 - Java 17+  
@@ -109,7 +138,7 @@ The CLI menu provides options to:
 
 ## Tools & Technologies  
 - **Language**: Java 17  
-Build Tool**: Maven  
+- **Build Tool**: Maven  
 - **Aspect-Oriented Programming**: AspectJ  
 - **Testing**: JUnit 5  
 - **Persistence**: CSV file-based storage  

@@ -14,23 +14,40 @@
 
     <!-- AspectJ -->
     <aspectj.version>1.9.22.1</aspectj.version>
+
+    <!-- Testing -->
+    <junit.jupiter.version>5.10.2</junit.jupiter.version>
+    <system.lambda.version>1.2.1</system.lambda.version>
   </properties>
 
   <dependencies>
-    <!-- AspectJ runtime is required at runtime when using AspectJ -->
+    <!-- AspectJ runtime required at runtime -->
     <dependency>
       <groupId>org.aspectj</groupId>
       <artifactId>aspectjrt</artifactId>
       <version>${aspectj.version}</version>
     </dependency>
+
+    <!-- JUnit 5 -->
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <version>${junit.jupiter.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- For setting APP_DATA_DIR env var in tests (no OS hacks) -->
+    <dependency>
+      <groupId>com.github.stefanbirkner</groupId>
+      <artifactId>system-lambda</artifactId>
+      <version>${system.lambda.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
-    <!-- Your repo currently uses src/ at the root (not src/main/java).
-         This makes Maven compile from the existing layout without moving files yet. -->
-    <sourceDirectory>src</sourceDirectory>
     <plugins>
-      <!-- Compile Java + .aj aspects using AspectJ -->
+      <!-- Compile Java + .aj aspects -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>aspectj-maven-plugin</artifactId>
@@ -46,9 +63,6 @@
           <complianceLevel>17</complianceLevel>
           <source>17</source>
           <target>17</target>
-
-          <!-- compile aspects found under src/ -->
-          <aspectLibraries />
           <showWeaveInfo>true</showWeaveInfo>
           <verbose>true</verbose>
           <encoding>${project.build.sourceEncoding}</encoding>
@@ -62,7 +76,21 @@
         </executions>
       </plugin>
 
-      <!-- Build a fat/uber jar that includes AspectJ runtime -->
+      <!-- Run JUnit 5 tests -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>3.3.1</version>
+        <configuration>
+          <useModulePath>false</useModulePath>
+          <argLine>
+            --add-opens java.base/java.util=ALL-UNNAMED
+            --add-opens java.base/java.lang=ALL-UNNAMED
+          </argLine>
+        </configuration>
+      </plugin>
+
+      <!-- Build a runnable fat/uber jar (includes AspectJ runtime) -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -83,21 +111,6 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
-
-
-      <!-- Create a runnable jar with a Main-Class -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>3.4.2</version>
-        <configuration>
-          <archive>
-            <manifest>
-              <mainClass>address_book.Main</mainClass>
-            </manifest>
-          </archive>
-        </configuration>
       </plugin>
     </plugins>
   </build>

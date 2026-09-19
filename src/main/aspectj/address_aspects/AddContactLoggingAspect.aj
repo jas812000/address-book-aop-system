@@ -1,45 +1,39 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package address_aspects;
 
 import address_book.Contact;
 import utilities.LogUtil;
 
 /**
- * Aspect for logging contact creation events within the Address Book system.
+ * Logs successful contact additions as a cross-cutting application concern.
  *
- * This aspect intercepts calls to add contacts via AddressBook.addContact(Contact),
- * and logs the added contact's details to a persistent log file.
- * 
- * It also writes a standardized "[NOTIFICATION]" entry confirming success.
+ * <p>The aspect observes successful executions of
+ * {@code AddressBook.addContact(Contact)} so logging remains separate from
+ * the address-book domain logic.</p>
+ *
+ * @author James Stevens
+ * @version 2.0
+ * @since 2025-07-01
  */
 public aspect AddContactLoggingAspect {
 
     /**
-     * Pointcut that matches the execution of AddressBook.addContact(Contact).
+     * Matches execution of the address-book add operation and exposes the
+     * contact supplied to it.
+     *
+     * @param contact contact being added
      */
-    pointcut addContactCall(): execution(* address_book.AddressBook.addContact(..));
+    pointcut addContact(Contact contact):
+        execution(void address_book.AddressBook.addContact(Contact))
+        && args(contact);
 
     /**
-     * After advice that triggers after a contact is added.
-     * If the contact is not null, logs the contact's information
-     * along with a notification.
+     * Logs the contact only after the add operation completes successfully.
      *
-     * @param contact the Contact object added to the address book
+     * @param contact contact that was added
      */
-    after(Contact contact): addContactCall() && args(contact) {
+    after(Contact contact) returning: addContact(contact) {
         if (contact != null) {
             LogUtil.logToFile("ADDED", contact.toString());
-            LogUtil.logToFile("NOTIFICATION", "Contact added successfully.");
         }
     }
 }

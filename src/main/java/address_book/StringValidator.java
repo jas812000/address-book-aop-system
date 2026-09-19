@@ -1,34 +1,25 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package address_book;
 
 /**
- * Functional interface for validating user input in the address book application.
- * 
- * Used in conjunction with lambdas or method references to abstract away
- * validation logic for strings (e.g., names, emails, states).
- * 
- * Implementations define custom rules to determine if input is acceptable.
+ * Defines a string-validation operation used by command-line input
+ * components.
+ *
+ * <p>The functional interface allows validation methods to be supplied
+ * through method references without coupling input-handling code to a
+ * particular validation implementation.</p>
+ *
+ * @author James Stevens
+ * @version 2.0
+ * @since 2025-07-01
  */
 @FunctionalInterface
 public interface StringValidator {
 
     /**
-     * Checks whether a given input string satisfies validation constraints.
+     * Determines whether an input value satisfies a validation rule.
      *
-     * @param input the string value to validate
-     * @return true if the input is considered valid; false otherwise
+     * @param input value to validate
+     * @return {@code true} if valid; otherwise {@code false}
      */
     boolean isValid(String input);
 }
-
-

@@ -1,75 +1,131 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the TicTacToe project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package validators;
 
+import address_book.Address;
 import address_book.Contact;
+import address_book.EmailAddress;
+import address_book.FieldValidator;
+import address_book.PhoneNumber;
+
+import java.util.Objects;
 
 /**
- * The {@code ContactIntegrityValidator} class provides a centralized validation mechanism
- * for all fields of a {@link Contact} object.
- * 
- * It uses regular expressions to ensure proper formatting and throws
- * {@code IllegalArgumentException} when fields do not meet the expected criteria.
- * 
- * This class is intended for use by both aspects and user input layers.
- * 
- * Example usage:
- *     Contact contact = new Contact(...);
- *     ContactIntegrityValidator.validateContact(contact);
- * 
+ * Validates the complete integrity of a {@link Contact}.
+ *
+ * <p>This validator delegates individual field validation to
+ * {@link FieldValidator}, ensuring that interactive validation and
+ * AspectJ-enforced domain validation use the same rules. It validates
+ * names together with every labeled address, phone number, and email
+ * address associated with the contact.</p>
+ *
  * @author James Stevens
- * @version 1.0
+ * @version 2.0
  * @since 2025-07-01
  */
-public class ContactIntegrityValidator {
+public final class ContactIntegrityValidator {
 
     /**
-     * Validates all individual fields of the specified {@link Contact}.
-     *
-     * @param c the Contact object to validate
-     * @throws IllegalArgumentException if any field is invalid
+     * Prevents instantiation because this class provides only static
+     * contact-validation operations.
      */
-    public static void validateContact(Contact c) {
-        if (!c.getFirstName().matches("^[A-Za-z'\\- ]{2,50}$")) {
+    private ContactIntegrityValidator() {
+    }
+
+    /**
+     * Validates all information associated with a contact.
+     *
+     * @param contact contact to validate
+     * @throws IllegalArgumentException if any contact data is invalid
+     */
+    public static void validateContact(Contact contact) {
+        Objects.requireNonNull(contact, "Contact cannot be null.");
+
+        validateName(contact);
+        validateAddresses(contact);
+        validatePhoneNumbers(contact);
+        validateEmailAddresses(contact);
+    }
+
+    /**
+     * Validates the contact's first and last names.
+     *
+     * @param contact contact being validated
+     */
+    private static void validateName(Contact contact) {
+        if (!FieldValidator.isValidFirstName(contact.getFirstName())) {
             throw new IllegalArgumentException("Invalid first name.");
         }
 
-        if (!c.getLastName().matches("^[A-Za-z'\\- ]{2,50}$")) {
+        if (!FieldValidator.isValidLastName(contact.getLastName())) {
             throw new IllegalArgumentException("Invalid last name.");
         }
+    }
 
-        if (!c.getStreet().matches("^[A-Za-z0-9 .,'#\\-]{5,100}$")) {
-            throw new IllegalArgumentException("Invalid street address.");
+    /**
+     * Validates every physical address associated with a contact.
+     *
+     * @param contact contact being validated
+     */
+    private static void validateAddresses(Contact contact) {
+        for (Address address : contact.getAddresses()) {
+            if (!FieldValidator.isValidLabel(address.getLabel())) {
+                throw new IllegalArgumentException("Invalid address label.");
+            }
+
+            if (!FieldValidator.isValidStreetAddress(address.getStreet())) {
+                throw new IllegalArgumentException("Invalid street address.");
+            }
+
+            if (!FieldValidator.isValidCity(address.getCity())) {
+                throw new IllegalArgumentException("Invalid city.");
+            }
+
+            if (!FieldValidator.isValidState(address.getState())) {
+                throw new IllegalArgumentException("Invalid state.");
+            }
+
+            if (!FieldValidator.isValidZipCode(address.getZipCode())) {
+                throw new IllegalArgumentException("Invalid ZIP code.");
+            }
         }
+    }
 
-        if (!c.getCity().matches("^[A-Za-z'\\- ]{2,}$")) {
-            throw new IllegalArgumentException("Invalid city name.");
+    /**
+     * Validates every phone number associated with a contact.
+     *
+     * @param contact contact being validated
+     */
+    private static void validatePhoneNumbers(Contact contact) {
+        for (PhoneNumber phoneNumber : contact.getPhoneNumbers()) {
+            if (!FieldValidator.isValidLabel(phoneNumber.getLabel())) {
+                throw new IllegalArgumentException("Invalid phone label.");
+            }
+
+            if (!FieldValidator.isValidPhoneNumberFormatted(
+                    phoneNumber.getNumber())) {
+
+                throw new IllegalArgumentException(
+                        "Invalid phone number."
+                );
+            }
         }
+    }
 
-        if (!c.getState().matches("^[A-Za-z ]{2,50}$")) {
-            throw new IllegalArgumentException("Invalid state name.");
-        }
+    /**
+     * Validates every email address associated with a contact.
+     *
+     * @param contact contact being validated
+     */
+    private static void validateEmailAddresses(Contact contact) {
+        for (EmailAddress emailAddress : contact.getEmailAddresses()) {
+            if (!FieldValidator.isValidLabel(emailAddress.getLabel())) {
+                throw new IllegalArgumentException("Invalid email label.");
+            }
 
-        if (!c.getZipCode().matches("^\\d{5}(-\\d{4})?$")) {
-            throw new IllegalArgumentException("Invalid ZIP code. Use 12345 or 12345-6789.");
-        }
-
-        String digits = c.getPhone().replaceAll("\\D", "");
-        if (!digits.matches("^\\d{10}$")) {
-            throw new IllegalArgumentException("Phone must contain exactly 10 digits.");
-        }
-
-        if (!c.getEmail().matches("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$")) {
-            throw new IllegalArgumentException("Invalid email format.");
+            if (!FieldValidator.isValidEmail(emailAddress.getEmail())) {
+                throw new IllegalArgumentException(
+                        "Invalid email address."
+                );
+            }
         }
     }
 }

@@ -1,100 +1,229 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package address_book;
 
-import java.util.List;
-import java.util.Scanner;
-import java.util.stream.Collectors;
 import address_utils.formatter.ContactFormatter;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+import java.util.Scanner;
+
 /**
- * Provides search functionality within a list of contacts.
- * 
- * Supports searching by first name, last name, full name, email, or phone number,
- * and allows users to select a contact from a list of matching results.
- * 
- * Used during update and delete operations to locate a specific contact.
- * 
+ * Provides contact searching and interactive result selection.
+ *
+ * <p>Searches are case-insensitive and support partial matching. Phone
+ * searches compare digits rather than presentation formatting so common
+ * phone-number representations produce equivalent results.</p>
+ *
  * @author James Stevens
- * @version 1.0
+ * @version 2.0
  * @since 2025-07-01
  */
-public class ContactSearcher {
+public final class ContactSearcher {
 
     /**
-     * Finds contacts that match a given search term for a specified field.
-     * 
-     * Case-insensitive and supports partial matching.
-     *
-     * @param contacts the list of contacts to search within
-     * @param field the field to search by: "first", "last", "full", "email", or "phone"
-     * @param value the value to search for (case-insensitive)
-     * @return list of matching contacts (can be empty if no match is found)
+     * Prevents instantiation because this class provides only static
+     * search operations.
      */
-    public static List<Contact> findMatches(List<Contact> contacts, String field, String value) {
-        String searchTerm = value.toLowerCase();
-
-        return contacts.stream().filter(c -> {
-            switch (field.toLowerCase()) {
-                case "first":
-                    return c.getFirstName().toLowerCase().contains(searchTerm);
-                case "last":
-                    return c.getLastName().toLowerCase().contains(searchTerm);
-                case "full":
-                case "name":
-                    String fullName = (c.getFirstName() + " " + c.getLastName()).toLowerCase();
-                    return fullName.contains(searchTerm);
-                case "email":
-                    return c.getEmail().toLowerCase().contains(searchTerm);
-                case "phone":
-                    return c.getPhone().toLowerCase().contains(searchTerm);
-                default:
-                    return false;
-            }
-        }).collect(Collectors.toList());
+    private ContactSearcher() {
     }
 
     /**
-     * Prompts the user to select a contact from a list of matches.
-     * 
-     * If one match is found, it is returned immediately.
-     * If multiple matches are found, the user selects by number.
+     * Finds contacts matching a search value in the requested field.
      *
-     * @param matches the list of matched contacts
-     * @param scanner the Scanner to read user input
-     * @return the selected contact, or null if no valid selection is made
+     * @param contacts contacts to search
+     * @param field field identifier
+     * @param value search value
+     * @return matching contacts
      */
-    public static Contact selectFromList(List<Contact> matches, Scanner scanner) {
-        if (matches.isEmpty()) {
+    public static List<Contact> findMatches(
+            List<Contact> contacts,
+            String field,
+            String value) {
+
+        if (contacts == null || field == null || value == null) {
+            return Collections.emptyList();
+        }
+
+        String normalizedField = field.trim().toLowerCase(Locale.ROOT);
+        String searchTerm = value.trim().toLowerCase(Locale.ROOT);
+
+        if (searchTerm.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return contacts.stream()
+                .filter(contact -> matches(
+                        contact,
+                        normalizedField,
+                        searchTerm
+                ))
+                .toList();
+    }
+
+    /**
+     * Determines whether a contact matches a search request.
+     *
+     * @param contact contact being evaluated
+     * @param field normalized field identifier
+     * @param searchTerm normalized search term
+     * @return {@code true} when the contact matches
+     */
+    private static boolean matches(
+            Contact contact,
+            String field,
+            String searchTerm) {
+
+        if (contact == null) {
+            return false;
+        }
+
+        switch (field) {
+            case "first":
+                return containsIgnoreCase(
+                        contact.getFirstName(),
+                        searchTerm
+                );
+
+            case "last":
+                return containsIgnoreCase(
+                        contact.getLastName(),
+                        searchTerm
+                );
+
+            case "full":
+            case "name":
+                return containsIgnoreCase(
+                        contact.getFullName(),
+                        searchTerm
+                );
+
+            case "email":
+                return contact.getEmailAddresses()
+                        .stream()
+                        .anyMatch(email ->
+                                containsIgnoreCase(
+                                        email.getEmail(),
+                                        searchTerm
+                                )
+                        );
+
+            case "phone":
+                return matchesPhone(contact, searchTerm);
+
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Determines whether any phone number contains the supplied search
+     * digits.
+     *
+     * @param contact contact being searched
+     * @param searchTerm raw search term
+     * @return {@code true} when a phone number matches
+     */
+    private static boolean matchesPhone(
+            Contact contact,
+            String searchTerm) {
+
+        String searchDigits = digitsOnly(searchTerm);
+
+        if (searchDigits.isEmpty()) {
+            return false;
+        }
+
+        return contact.getPhoneNumbers()
+                .stream()
+                .map(PhoneNumber::getNumber)
+                .map(ContactSearcher::digitsOnly)
+                .anyMatch(number -> number.contains(searchDigits));
+    }
+
+    /**
+     * Performs null-safe, case-insensitive partial matching.
+     *
+     * @param value stored value
+     * @param searchTerm normalized search term
+     * @return {@code true} when the stored value contains the search term
+     */
+    private static boolean containsIgnoreCase(
+            String value,
+            String searchTerm) {
+
+        return value != null
+                && value.toLowerCase(Locale.ROOT).contains(searchTerm);
+    }
+
+    /**
+     * Removes phone-number presentation characters for searching.
+     *
+     * @param value phone search value
+     * @return numeric characters only
+     */
+    private static String digitsOnly(String value) {
+        return value == null
+                ? ""
+                : value.replaceAll("\\D", "");
+    }
+
+    /**
+     * Selects one contact from search results.
+     *
+     * <p>A single result is returned immediately. Multiple results are
+     * displayed for explicit selection. Entering {@code cancel} abandons
+     * the operation.</p>
+     *
+     * @param matches matching contacts
+     * @param scanner scanner used for console input
+     * @return selected contact, or {@code null} if none is selected
+     */
+    public static Contact selectFromList(
+            List<Contact> matches,
+            Scanner scanner) {
+
+        if (matches == null || matches.isEmpty()) {
             System.out.println("No matching contacts found.");
             return null;
-        } else if (matches.size() == 1) {
-            return matches.get(0); 
-        } else {
-            System.out.println("Multiple matches found:");
-            for (int i = 0; i < matches.size(); i++) {
-                System.out.println((i + 1) + ". " + ContactFormatter.formatCompact(matches.get(i)));
+        }
+
+        if (matches.size() == 1) {
+            return matches.get(0);
+        }
+
+        System.out.println("Multiple matches found:");
+
+        for (int i = 0; i < matches.size(); i++) {
+            System.out.println(
+                    (i + 1)
+                            + ". "
+                            + ContactFormatter.formatCompact(matches.get(i))
+            );
+        }
+
+        while (true) {
+            System.out.print(
+                    "Select contact by number or enter 'cancel': "
+            );
+
+            String input = scanner.nextLine().trim();
+
+            if ("cancel".equalsIgnoreCase(input)) {
+                System.out.println("Selection cancelled.");
+                return null;
             }
 
-            while (true) {
-                System.out.print("Select contact by number: ");
-                try {
-                    int choice = Integer.parseInt(scanner.nextLine());
-                    if (choice >= 1 && choice <= matches.size()) {
-                        return matches.get(choice - 1);
-                    }
-                } catch (NumberFormatException ignored) {}
-                System.out.println("Invalid selection. Try again.");
+            try {
+                int choice = Integer.parseInt(input);
+
+                if (choice >= 1 && choice <= matches.size()) {
+                    return matches.get(choice - 1);
+                }
+            } catch (NumberFormatException ignored) {
+                // The common validation message below handles bad input.
             }
+
+            System.out.println("Invalid selection. Please try again.");
         }
     }
 }

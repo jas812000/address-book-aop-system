@@ -1,61 +1,81 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package address_aspects;
 
+import address_book.Contact;
 import utilities.LogUtil;
 
 /**
- * Aspect that logs notifications to the general log file after key contact operations.
- * 
- * Intercepts and logs successful add, delete, and update actions performed on contacts.
- * Replaces console output with centralized logging via LogUtil.
- * 
- * Notifications are labeled as "NOTIFICATION" in log.txt.
+ * Logs successful address-book operation notifications.
+ *
+ * <p>This aspect separates high-level business-operation notifications from
+ * detailed audit logging. Add, update, and delete logging aspects record the
+ * affected contact data, while this aspect records whether the corresponding
+ * operation completed successfully.</p>
+ *
+ * <p>Notifications are emitted only when an operation actually succeeds.
+ * Cancelled delete and update operations therefore do not produce false
+ * success notifications.</p>
+ *
+ * @author James Stevens
+ * @version 2.0
+ * @since 2025-07-01
  */
 public aspect NotificationAspect {
 
     /**
-     * Pointcut that captures any call to add a contact via AddressBook.
+     * Matches successful execution of the contact-add operation.
      */
-    pointcut afterAdd(): call(* address_book.AddressBook.addContact(..));
-    
+    pointcut addOperation():
+        execution(void address_book.AddressBook.addContact(Contact));
+
     /**
-     * Logs a notification after a contact is successfully added.
+     * Records successful contact creation.
      */
-    after(): afterAdd() {
-        LogUtil.logToFile("NOTIFICATION", "Contact added successfully.");
+    after() returning: addOperation() {
+        LogUtil.logToFile(
+            "NOTIFICATION",
+            "Contact added successfully."
+        );
     }
 
     /**
-     * Pointcut that captures any call to delete a contact via AddressBook.
+     * Matches execution of the contact-delete operation.
      */
-    pointcut afterDelete(): call(* address_book.AddressBook.deleteContact(..));
-    
+    pointcut deleteOperation():
+        execution(Contact address_book.AddressBook.deleteContact(..));
+
     /**
-     * Logs a notification after a contact is successfully deleted.
+     * Records successful contact deletion only when a contact was actually
+     * deleted.
+     *
+     * @param deleted contact returned by the delete operation
      */
-    after(): afterDelete() {
-        LogUtil.logToFile("NOTIFICATION", "Contact deleted successfully.");
+    after() returning(Contact deleted): deleteOperation() {
+        if (deleted != null) {
+            LogUtil.logToFile(
+                "NOTIFICATION",
+                "Contact deleted successfully."
+            );
+        }
     }
 
     /**
-     * Pointcut that captures any call to update a contact via AddressBook.
+     * Matches execution of the contact-update operation.
      */
-    pointcut afterUpdate(): call(* address_book.AddressBook.updateContact(..));
+    pointcut updateOperation():
+        execution(Contact[] address_book.AddressBook.updateContact(..));
 
     /**
-     * Logs a notification after a contact is successfully updated.
+     * Records successful contact modification only when an update actually
+     * occurred.
+     *
+     * @param result original and updated contact snapshots
      */
-    after(): afterUpdate() {
-        LogUtil.logToFile("NOTIFICATION", "Contact updated successfully.");
+    after() returning(Contact[] result): updateOperation() {
+        if (result != null && result.length == 2) {
+            LogUtil.logToFile(
+                "NOTIFICATION",
+                "Contact updated successfully."
+            );
+        }
     }
 }

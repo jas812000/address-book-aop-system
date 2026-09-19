@@ -1,35 +1,25 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package address_book;
 
 /**
- * Entry point of the Address Book Application.
- * 
- * This class contains the main method and is responsible for launching
- * the application by creating and running the AddressBookApp instance.
- * 
- * No command-line arguments are required to run the program.
- * All user interaction occurs via the console.
- * 
+ * Provides the executable entry point for the Address Book application.
+ *
  * @author James Stevens
- * @version 1.0
+ * @version 2.0
  * @since 2025-07-01
  */
-public class Main {
+public final class Main {
 
     /**
-     * The main method that starts the Address Book application.
+     * Prevents instantiation because this class serves only as the
+     * application entry point.
+     */
+    private Main() {
+    }
+
+    /**
+     * Starts the interactive Address Book application.
      *
-     * @param args command-line arguments (not used in this application)
+     * @param args command-line arguments; not used
      */
     public static void main(String[] args) {
         AddressBookApp app = new AddressBookApp();

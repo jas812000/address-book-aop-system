@@ -1,14 +1,3 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package io;
 
 import java.io.IOException;
@@ -17,55 +6,65 @@ import java.nio.file.Path;
 import java.util.List;
 
 /**
- * Utility class for reading file contents from disk.
- * <p>
- * Supports reading lines as a list or the entire file as a string.
- * Provides helper methods to operate within the application’s base directory.
+ * Provides shared text-file reading operations.
+ *
+ * <p>The utility supports reading complete files or individual lines and
+ * provides convenience operations for files relative to the application's
+ * configured base directory.</p>
+ *
+ * @author James Stevens
+ * @version 2.0
+ * @since 2025-07-01
  */
-public class FileLoader {
+public final class FileLoader {
 
     /**
-     * Loads all lines from a file at the given path.
-     *
-     * @param path the path to the file
-     * @return list of lines from the file
-     * @throws IOException if an I/O error occurs
+     * Prevents instantiation because this class provides only static
+     * file-reading operations.
      */
-    public static List<String> loadLines(Path path) throws IOException {
-        try {
-            return Files.readAllLines(path);
-        } catch (IOException e) {
-            throw e;
-        }
+    private FileLoader() {
     }
 
     /**
-     * Loads the entire contents of a file as a single string.
+     * Reads all lines from a file.
      *
-     * @param path the path to the file
-     * @return file contents as a single string
-     * @throws IOException if an I/O error occurs
+     * @param path source file
+     * @return file contents as individual lines
+     * @throws IOException if the file cannot be read
+     */
+    public static List<String> loadLines(Path path) throws IOException {
+        return Files.readAllLines(path);
+    }
+
+    /**
+     * Reads an entire file as one string.
+     *
+     * @param path source file
+     * @return complete file contents
+     * @throws IOException if the file cannot be read
      */
     public static String loadAsString(Path path) throws IOException {
         return Files.readString(path);
     }
 
     /**
-     * Loads lines from a file located under the base data directory.
+     * Reads lines from a file relative to the application base directory.
      *
-     * @param fileName the name of the file relative to the base directory
-     * @return list of lines from the file
-     * @throws IOException if an I/O error occurs
+     * @param fileName relative file name
+     * @return file contents as individual lines
+     * @throws IOException if the file cannot be read
      */
-    public static List<String> loadLinesFromBase(String fileName) throws IOException {
+    public static List<String> loadLinesFromBase(String fileName)
+            throws IOException {
+
         return loadLines(AppPaths.getFile(fileName));
     }
 
     /**
-     * Checks if a file exists at the specified path.
+     * Determines whether a file exists.
      *
-     * @param path the file path to check
-     * @return true if the file exists; false otherwise
+     * @param path file to check
+     * @return {@code true} if the file exists
      */
     public static boolean fileExists(Path path) {
         return Files.exists(path);

@@ -1,50 +1,51 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package utilities;
 
-import java.io.*;
+import io.AppPaths;
+import io.FileSaver;
+
+import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * Utility class for logging general information to a centralized log file.
- * <p>
- * Log entries are written to "log/log.txt" and include a timestamp, label, and message content.
- * Errors during logging are forwarded to {@link ErrorUtil} for fallback logging.
+ * Provides centralized application event logging.
+ *
+ * <p>Log entries are appended to the application's general log and contain
+ * a timestamp, descriptive label, and associated content. Logging failures
+ * are delegated to {@link ErrorUtil}.</p>
+ *
+ * @author James Stevens
+ * @version 2.0
+ * @since 2025-07-01
  */
-public class LogUtil {
+public final class LogUtil {
 
     /**
-     * Logs a labeled message to the log file ("log/log.txt").
-     * <p>
-     * Automatically creates the log directory if it does not exist.
+     * Prevents instantiation because this class provides only static
+     * logging operations.
+     */
+    private LogUtil() {
+    }
+
+    /**
+     * Appends a labeled event to the application log.
      *
-     * @param label   a short label describing the type of log (e.g., "INFO", "ADDED", "DELETED")
-     * @param content the detailed message to log
+     * @param label short description of the event type
+     * @param content event details
      */
     public static void logToFile(String label, String content) {
         try {
-            File logDir = new File("log");
-            if (!logDir.exists()) {
-                logDir.mkdirs();
-            }
-
-            try (PrintWriter out = new PrintWriter(new FileWriter("log/log.txt", true))) {
-                out.println("[" + LocalDateTime.now() + "] " + label);
-                out.println(content);
-                out.println("--------------------------------------------------");
-            }
-
-        } catch (Exception e) {
-            ErrorUtil.logError(e); // Delegate to error logger
+            FileSaver.appendLines(
+                    AppPaths.getFile("log/log.txt"),
+                    List.of(
+                            "[" + LocalDateTime.now() + "] "
+                                    + String.valueOf(label),
+                            String.valueOf(content),
+                            "--------------------------------------------------"
+                    )
+            );
+        } catch (IOException exception) {
+            ErrorUtil.logError(exception);
         }
     }
 }

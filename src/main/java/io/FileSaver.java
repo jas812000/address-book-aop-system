@@ -1,97 +1,124 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package io;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 
 /**
- * Utility class for writing text content to files.
- * Supports writing strings and lists of lines to specified paths,
- * with automatic creation of parent directories as needed.
- * 
- * <p>
- * Used throughout the application to persist data such as contact CSV files,
- * logs, and other output files.
- * </p>
- * 
+ * Provides shared text-file writing operations.
+ *
+ * <p>The utility supports both replacement writes used for application
+ * persistence and append writes used for logging. Parent directories are
+ * created automatically when necessary.</p>
+ *
  * @author James Stevens
- * @version 1.0
+ * @version 2.0
  * @since 2025-07-01
  */
-public class FileSaver {
+public final class FileSaver {
 
     /**
-     * Saves a list of text lines to the specified file.
-     * Overwrites any existing content.
-     *
-     * @param path  the destination file path
-     * @param lines the lines of text to write
-     * @throws IOException if writing fails
+     * Prevents instantiation because this class provides only static
+     * file-writing operations.
      */
-    public static void saveLines(Path path, List<String> lines) throws IOException {
+    private FileSaver() {
+    }
+
+    /**
+     * Writes lines to a file, replacing any existing content.
+     *
+     * @param path destination file
+     * @param lines lines to write
+     * @throws IOException if the file cannot be written
+     */
+    public static void saveLines(
+            Path path,
+            List<String> lines) throws IOException {
+
         ensureParentDirectory(path);
         Files.write(path, lines);
     }
 
     /**
-     * Saves a single string to the specified file.
-     * Overwrites any existing content.
+     * Appends lines to a file while preserving existing content.
      *
-     * @param path    the destination file path
-     * @param content the full string content to write
-     * @throws IOException if writing fails
+     * <p>The file is created automatically when it does not already exist.</p>
+     *
+     * @param path destination file
+     * @param lines lines to append
+     * @throws IOException if the file cannot be written
      */
-    public static void saveString(Path path, String content) throws IOException {
+    public static void appendLines(
+            Path path,
+            List<String> lines) throws IOException {
+
+        ensureParentDirectory(path);
+
+        Files.write(
+                path,
+                lines,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.APPEND
+        );
+    }
+
+    /**
+     * Writes a string to a file, replacing any existing content.
+     *
+     * @param path destination file
+     * @param content content to write
+     * @throws IOException if the file cannot be written
+     */
+    public static void saveString(
+            Path path,
+            String content) throws IOException {
+
         ensureParentDirectory(path);
         Files.writeString(path, content);
     }
 
     /**
-     * Convenience method to save a list of lines to a file
-     * located under the base application directory.
+     * Writes lines to a file relative to the application base directory.
      *
-     * @param fileName the name of the file (relative to base directory)
-     * @param lines    the lines to write
-     * @throws IOException if writing fails
+     * @param fileName relative file name
+     * @param lines lines to write
+     * @throws IOException if the file cannot be written
      */
-    public static void saveLinesToBase(String fileName, List<String> lines) throws IOException {
+    public static void saveLinesToBase(
+            String fileName,
+            List<String> lines) throws IOException {
+
         saveLines(AppPaths.getFile(fileName), lines);
     }
 
     /**
-     * Convenience method to save a single string to a file
-     * located under the base application directory.
+     * Writes a string to a file relative to the application base directory.
      *
-     * @param fileName the name of the file (relative to base directory)
-     * @param content  the content to write
-     * @throws IOException if writing fails
+     * @param fileName relative file name
+     * @param content content to write
+     * @throws IOException if the file cannot be written
      */
-    public static void saveStringToBase(String fileName, String content) throws IOException {
+    public static void saveStringToBase(
+            String fileName,
+            String content) throws IOException {
+
         saveString(AppPaths.getFile(fileName), content);
     }
 
     /**
-     * Ensures that the parent directory of a given file path exists.
-     * Creates any missing directories if needed.
+     * Creates the destination's parent directories when necessary.
      *
-     * @param path the target file path
-     * @throws IOException if directory creation fails
+     * @param path destination file
+     * @throws IOException if required directories cannot be created
      */
-    private static void ensureParentDirectory(Path path) throws IOException {
+    private static void ensureParentDirectory(Path path)
+            throws IOException {
+
         Path parent = path.getParent();
-        if (parent != null && !Files.exists(parent)) {
+
+        if (parent != null) {
             Files.createDirectories(parent);
         }
     }

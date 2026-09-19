@@ -1,119 +1,182 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package address_book;
 
+import java.util.regex.Pattern;
+
 /**
- * Centralized validation logic for contact attributes.
- * 
- * This class provides static methods for validating individual fields
- * such as name, address, city, state, ZIP code, phone number, and email.
- * These methods are used by input handlers and validation-related aspects.
- * 
- * Each method returns {@code true} if the input is valid, {@code false} otherwise.
- * 
+ * Centralizes field-level validation rules for contact information.
+ *
+ * <p>The validator defines the rules for names, labels, physical addresses,
+ * phone numbers, and email addresses. AspectJ aspects apply these rules at
+ * relevant application and domain join points so validation can be enforced
+ * consistently as a cross-cutting concern.</p>
+ *
  * @author James Stevens
- * @version 1.0
+ * @version 2.0
  * @since 2025-07-01
  */
-public class FieldValidator {
+public final class FieldValidator {
+
+    private static final Pattern NAME_PATTERN =
+            Pattern.compile("^[\\p{L}][\\p{L}' -]{0,49}$");
+
+    private static final Pattern STREET_PATTERN =
+            Pattern.compile("^[\\p{L}\\p{N}][\\p{L}\\p{N} .,'#/-]{4,99}$");
+
+    private static final Pattern CITY_PATTERN =
+            Pattern.compile("^[\\p{L}][\\p{L} .'\\-]{1,49}$");
+
+    private static final Pattern STATE_PATTERN =
+            Pattern.compile("^[A-Za-z]{2}$");
+
+    private static final Pattern PHONE_PATTERN =
+            Pattern.compile(
+                    "^(?:\\d{10}|\\d{3}-\\d{3}-\\d{4}|\\(\\d{3}\\) ?\\d{3}-\\d{4})$"
+            );
+
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile(
+                    "^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+"
+                            + "@[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?"
+                            + "(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+$"
+            );
 
     /**
-     * Validates first name: allows letters, apostrophes, hyphens, and spaces.
-     * Length must be between 2 and 30 characters.
-     * 
-     * @param name the first name input
-     * @return true if valid, false otherwise
+     * Prevents instantiation because this class provides only static
+     * validation operations.
+     */
+    private FieldValidator() {
+    }
+
+    /**
+     * Validates a first name.
+     *
+     * <p>Names may contain letters, apostrophes, hyphens, and spaces,
+     * supporting values such as {@code Martinez-Samuel}.</p>
+     *
+     * @param name first name
+     * @return {@code true} if valid; otherwise {@code false}
      */
     public static boolean isValidFirstName(String name) {
-        return name.matches("^[A-Za-z][A-Za-z'\\-\\s]{1,29}$");
+        return matches(name, NAME_PATTERN);
     }
 
     /**
-     * Validates last name: allows letters, apostrophes, hyphens, and spaces.
-     * Length must be between 2 and 30 characters.
-     * 
-     * @param name the last name input
-     * @return true if valid, false otherwise
+     * Validates a last name.
+     *
+     * <p>Names may contain letters, apostrophes, hyphens, and spaces.</p>
+     *
+     * @param name last name
+     * @return {@code true} if valid; otherwise {@code false}
      */
     public static boolean isValidLastName(String name) {
-        return name.matches("^[A-Za-z][A-Za-z'\\-\\s]{1,29}$");
+        return matches(name, NAME_PATTERN);
     }
 
     /**
-     * Validates street address: allows alphanumeric characters and common symbols
-     * such as dots, commas, hashes, and hyphens.
-     * Length must be between 5 and 100 characters.
-     * 
-     * @param street the street address input
-     * @return true if valid, false otherwise
+     * Validates a label used to identify an address, phone number,
+     * or email address.
+     *
+     * @param label label to validate
+     * @return {@code true} if the label is nonblank and no longer than
+     *         30 characters
+     */
+    public static boolean isValidLabel(String label) {
+        return label != null
+                && !label.trim().isEmpty()
+                && label.trim().length() <= 30;
+    }
+
+    /**
+     * Validates a street address.
+     *
+     * <p>Letters, numbers, spaces, and common address punctuation are
+     * supported.</p>
+     *
+     * @param street street address
+     * @return {@code true} if valid; otherwise {@code false}
      */
     public static boolean isValidStreetAddress(String street) {
-        return street.matches("^[A-Za-z0-9 .#,-]{5,100}$");
+        return matches(street, STREET_PATTERN);
     }
 
     /**
-     * Validates city: only letters and spaces allowed.
-     * Length must be between 2 and 50 characters.
-     * 
-     * @param city the city name input
-     * @return true if valid, false otherwise
+     * Validates a city name.
+     *
+     * <p>Letters, spaces, apostrophes, periods, and hyphens are supported,
+     * allowing names such as {@code Winston-Salem}.</p>
+     *
+     * @param city city
+     * @return {@code true} if valid; otherwise {@code false}
      */
     public static boolean isValidCity(String city) {
-        return city.matches("^[A-Za-z][A-Za-z\\s]{1,49}$");
+        return matches(city, CITY_PATTERN);
     }
 
     /**
-     * Validates state: alphabetic characters and spaces only.
-     * Length must be between 2 and 50 characters, cannot be blank.
-     * 
-     * @param state the state name input
-     * @return true if valid, false otherwise
+     * Validates a two-letter U.S. state abbreviation.
+     *
+     * <p>The validation rule accepts exactly two alphabetic characters.
+     * Interactive input normalizes accepted abbreviations to uppercase
+     * before they enter the domain model.</p>
+     *
+     * @param state two-letter state abbreviation
+     * @return {@code true} if valid; otherwise {@code false}
      */
     public static boolean isValidState(String state) {
-        return state.matches("^[A-Za-z ]{2,50}$") && !state.trim().isEmpty();
+        return matches(state, STATE_PATTERN);
     }
 
     /**
-     * Validates ZIP code: either 5 digits or ZIP+4 format (e.g., 12345-6789).
-     * 
-     * @param zip the ZIP code input
-     * @return true if valid, false otherwise
+     * Determines whether a ZIP code uses a supported format.
+     *
+     * <p>Accepted formats are a five-digit ZIP code or a ZIP+4 value
+     * containing the required hyphen.</p>
+     *
+     * @param zipCode ZIP code to validate
+     * @return {@code true} when the ZIP code is valid
      */
-    public static boolean isValidZipCode(String zip) {
-        if (zip == null) return false;
-        String z = zip.trim();
-        return z.matches("^\\d{5}(-\\d{4})?$") || z.matches("^\\d{9}$");
+    public static boolean isValidZipCode(String zipCode) {
+        return matches(
+                zipCode,
+                Pattern.compile("^\\d{5}(-\\d{4})?$")
+        );
     }
 
     /**
-     * Validates phone number: must be exactly 10 digits after stripping
-     * non-digit characters. Accepts common formatting styles.
-     * 
-     * @param phone the phone number input
-     * @return true if valid, false otherwise
+     * Validates a U.S. phone number using supported common representations.
+     *
+     * <p>Accepted examples include {@code 2105551212},
+     * {@code 210-555-1212}, and {@code (210) 555-1212}. Characters are
+     * validated before normalization so arbitrary text cannot be hidden
+     * by simply stripping all nondigit characters.</p>
+     *
+     * @param phone phone number
+     * @return {@code true} if valid; otherwise {@code false}
      */
     public static boolean isValidPhoneNumberFormatted(String phone) {
-        String digits = phone.replaceAll("\\D", "");
-        return digits.matches("\\d{10}");
+        return matches(phone, PHONE_PATTERN);
     }
 
     /**
-     * Validates email address using a general pattern.
-     * Accepts subdomains and typical email characters.
-     * 
-     * @param email the email address input
-     * @return true if valid, false otherwise
+     * Validates an email address using the application's supported
+     * email-address format.
+     *
+     * @param email email address
+     * @return {@code true} if valid; otherwise {@code false}
      */
     public static boolean isValidEmail(String email) {
-        return email.matches("^[\\w.-]+@[\\w.-]+\\.[A-Za-z]{2,}$");
+        return matches(email, EMAIL_PATTERN);
+    }
+
+    /**
+     * Applies a regular-expression validation rule to trimmed,
+     * non-null input.
+     *
+     * @param value value to validate
+     * @param pattern validation pattern
+     * @return {@code true} if the value matches the pattern
+     */
+    private static boolean matches(String value, Pattern pattern) {
+        return value != null && pattern.matcher(value.trim()).matches();
     }
 }

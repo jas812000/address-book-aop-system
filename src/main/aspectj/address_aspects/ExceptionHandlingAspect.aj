@@ -1,53 +1,54 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package address_aspects;
 
 import utilities.ErrorUtil;
 
 /**
- * Global exception handler for the Address Book application.
- * 
- * This aspect automatically wraps method calls to:
- * - `address_book.AddressBookController` (user interface logic)
- * - Any class within the `io` package (file and path operations)
- * 
- * If an exception is thrown:
- * - It is caught to prevent application crashes
- * - It is logged with a timestamp and full stack trace to log/error.txt
- * - A user-friendly fallback (null return) is provided
+ * Provides centralized exception logging through AspectJ.
+ *
+ * <p>This aspect observes exceptions thrown from the application's
+ * controller, persistence, parsing, and file-I/O layers. Exception logging
+ * therefore remains separate from the classes performing those operations.</p>
+ *
+ * <p>The aspect deliberately does not suppress exceptions or replace failure
+ * results. After an exception is logged, normal Java exception propagation
+ * continues unchanged.</p>
+ *
+ * <p>Logging infrastructure is excluded from observation so a failure that
+ * occurs while writing a log cannot recursively trigger exception logging.</p>
+ *
+ * @author James Stevens
+ * @version 2.0
+ * @since 2025-07-01
  */
 public aspect ExceptionHandlingAspect {
 
     /**
-     * Pointcut that captures all method executions in:
-     * - The AddressBookController class
-     * - Any class within the 'io' package
+     * Matches application operations whose unexpected exceptions should be
+     * centrally logged.
+     *
+     * <p>Log-writing operations and execution occurring within the logging
+     * utilities are excluded to prevent recursive logging failures.</p>
      */
-    pointcut allAppMethods():
-        execution(* address_book.AddressBookController.*(..)) || execution(* io..*(..));
+    pointcut monitoredOperation():
+        (
+            execution(* address_book.AddressBookController.*(..))
+            || execution(* address_utils.storage..*(..))
+            || execution(* address_utils.parser..*(..))
+            || execution(* io..*(..))
+        )
+        && !execution(* io.FileSaver.appendLines(..))
+        && !cflow(execution(* utilities.LogUtil.*(..)))
+        && !cflow(execution(* utilities.ErrorUtil.*(..)));
 
     /**
-     * Around advice that wraps each captured method with exception handling.
-     * Logs any exception using LogUtil and returns null to preserve control flow.
+     * Logs an exception thrown by a monitored operation.
      *
-     * @return original return value or null on exception
+     * <p>Because this is {@code after throwing} advice, the original
+     * exception continues through the application's normal control flow.</p>
+     *
+     * @param exception exception thrown by the intercepted operation
      */
-    Object around(): allAppMethods() {
-        try {
-            return proceed();
-        } catch (Exception e) {
-            ErrorUtil.logError(e);
-            return null;
-        }
+    after() throwing(Exception exception): monitoredOperation() {
+        ErrorUtil.logError(exception);
     }
 }
-

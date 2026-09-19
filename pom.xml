@@ -1,6 +1,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.jamesstevens</groupId>
@@ -21,7 +23,8 @@
   </properties>
 
   <dependencies>
-    <!-- AspectJ runtime required at runtime -->
+
+    <!-- AspectJ runtime required by woven application classes -->
     <dependency>
       <groupId>org.aspectj</groupId>
       <artifactId>aspectjrt</artifactId>
@@ -36,22 +39,42 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- For setting APP_DATA_DIR env var in tests (no OS hacks) -->
+    <!-- Allows environment-variable isolation in tests -->
     <dependency>
       <groupId>com.github.stefanbirkner</groupId>
       <artifactId>system-lambda</artifactId>
       <version>${system.lambda.version}</version>
       <scope>test</scope>
     </dependency>
+
   </dependencies>
 
   <build>
     <plugins>
-      <!-- Compile Java + .aj aspects -->
+
+      <!--
+        Disable Maven's normal Java compilation because AspectJ must compile
+        the Java domain classes together with the .aj aspects. This ensures
+        execution join points are woven directly into the resulting classes.
+      -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.13.0</version>
+        <executions>
+          <execution>
+            <id>default-compile</id>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Compile and weave production Java + AspectJ sources -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>aspectj-maven-plugin</artifactId>
         <version>1.14.0</version>
+
         <dependencies>
           <dependency>
             <groupId>org.aspectj</groupId>
@@ -59,6 +82,7 @@
             <version>${aspectj.version}</version>
           </dependency>
         </dependencies>
+
         <configuration>
           <complianceLevel>17</complianceLevel>
           <source>17</source>
@@ -66,9 +90,31 @@
           <showWeaveInfo>true</showWeaveInfo>
           <verbose>true</verbose>
           <encoding>${project.build.sourceEncoding}</encoding>
+
+          <!--
+            Include the project's dedicated AspectJ source tree so .aj
+            aspects are compiled and woven with the Java application classes.
+          -->
+          <sources>
+            <source>
+              <basedir>src/main/java</basedir>
+              <includes>
+                <include>**/*.java</include>
+              </includes>
+            </source>
+            <source>
+              <basedir>src/main/aspectj</basedir>
+              <includes>
+                <include>**/*.aj</include>
+              </includes>
+            </source>
+          </sources>
         </configuration>
+
         <executions>
           <execution>
+            <id>aspectj-compile</id>
+            <phase>compile</phase>
             <goals>
               <goal>compile</goal>
             </goals>
@@ -81,6 +127,7 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.3.1</version>
+
         <configuration>
           <useModulePath>false</useModulePath>
           <argLine>
@@ -90,19 +137,22 @@
         </configuration>
       </plugin>
 
-      <!-- Build a runnable fat/uber jar (includes AspectJ runtime) -->
+      <!-- Build a runnable fat/uber JAR including the AspectJ runtime -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <version>3.6.0</version>
+
         <executions>
           <execution>
             <phase>package</phase>
             <goals>
               <goal>shade</goal>
             </goals>
+
             <configuration>
               <createDependencyReducedPom>false</createDependencyReducedPom>
+
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <mainClass>address_book.Main</mainClass>
@@ -112,6 +162,8 @@
           </execution>
         </executions>
       </plugin>
+
     </plugins>
   </build>
+
 </project>

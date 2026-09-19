@@ -1,58 +1,79 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package utilities;
 
-import java.io.*;
+import io.AppPaths;
+import io.FileSaver;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * Utility class for logging exceptions and error messages.
- * <p>
- * Logs are written to "log/error.txt" and include timestamp, exception type,
- * message, and full stack trace. Ensures fallback behavior if error logging itself fails.
+ * Provides centralized exception logging for the application.
+ *
+ * <p>Error entries include a timestamp, exception type, exception message,
+ * and complete stack trace. Error-log persistence uses the application's
+ * shared path and file utilities rather than maintaining an independent
+ * hardcoded logging location.</p>
+ *
+ * @author James Stevens
+ * @version 2.0
+ * @since 2025-07-01
  */
-public class ErrorUtil {
+public final class ErrorUtil {
 
     /**
-     * Logs detailed exception information to "log/error.txt".
-     * <p>
-     * Includes:
-     * <ul>
-     *   <li>Timestamp of the error</li>
-     *   <li>Exception class name</li>
-     *   <li>Exception message</li>
-     *   <li>Stack trace</li>
-     * </ul>
-     *
-     * @param e the exception to log
+     * Prevents instantiation because this class provides only static
+     * error-logging operations.
      */
-    public static void logError(Exception e) {
-        try {
-            File logDir = new File("log");
-            if (!logDir.exists()) logDir.mkdirs();
+    private ErrorUtil() {
+    }
 
-            try (PrintWriter out = new PrintWriter(new FileWriter("log/error.txt", true))) {
-                out.println("[" + LocalDateTime.now() + "] ERROR");
-                out.println("Exception: " + e.getClass().getSimpleName());
-                out.println("Message: Logging failed: " + e.getMessage());
-                out.println("Stack Trace:");
-                for (StackTraceElement ste : e.getStackTrace()) {
-                    out.println("\tat " + ste);
-                }
-                out.println("--------------------------------------------------");
-            }
-        } catch (Exception ex) {
-            // If even error logging fails, fallback to minimal console output
-            System.out.println("[ERROR] Unable to log an error to the error log.");
+    /**
+     * Appends detailed exception information to the application error log.
+     *
+     * @param exception exception to log
+     */
+    public static void logError(Exception exception) {
+        if (exception == null) {
+            return;
         }
+
+        try {
+            FileSaver.appendLines(
+                    AppPaths.getFile("log/error.txt"),
+                    List.of(
+                            "[" + LocalDateTime.now() + "] ERROR",
+                            "Exception: "
+                                    + exception.getClass().getSimpleName(),
+                            "Message: "
+                                    + String.valueOf(exception.getMessage()),
+                            "Stack Trace:",
+                            stackTraceOf(exception),
+                            "--------------------------------------------------"
+                    )
+            );
+        } catch (IOException loggingException) {
+            System.err.println(
+                    "[ERROR] Unable to write to the application error log."
+            );
+        }
+    }
+
+    /**
+     * Converts an exception stack trace into text suitable for persistence.
+     *
+     * @param exception exception whose stack trace is required
+     * @return complete stack trace
+     */
+    private static String stackTraceOf(Exception exception) {
+        StringWriter buffer = new StringWriter();
+
+        try (PrintWriter writer = new PrintWriter(buffer)) {
+            exception.printStackTrace(writer);
+        }
+
+        return buffer.toString().stripTrailing();
     }
 }

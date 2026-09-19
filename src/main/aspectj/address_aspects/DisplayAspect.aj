@@ -1,45 +1,40 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package address_aspects;
 
 import address_book.Contact;
 import address_utils.formatter.ContactFormatter;
 
 /**
- * Aspect that intercepts all calls to Contact.toString() and overrides
- * its behavior with a custom formatted string via the ContactFormatter utility.
+ * Applies the application's detailed contact presentation through AspectJ.
  *
- * This ensures that contact information is consistently displayed
- * in a readable format across the application.
+ * <p>The underlying {@link Contact#toString()} remains a simple domain
+ * representation. Calls to it are intercepted and replaced with the richer
+ * address-book presentation supplied by {@link ContactFormatter}. This
+ * deliberately demonstrates separation of presentation as a cross-cutting
+ * concern.</p>
+ *
+ * @author James Stevens
+ * @version 2.0
+ * @since 2025-07-01
  */
 public aspect DisplayAspect {
 
     /**
-     * Pointcut that captures calls to the toString() method
-     * of Contact objects anywhere in the application.
+     * Matches calls to {@link Contact#toString()}.
      *
-     * @param c the Contact whose toString() is being called
+     * @param contact target contact
      */
-    pointcut displayCall(Contact c):
-        call(String address_book.Contact.toString()) && target(c);
+    pointcut contactDisplay(Contact contact):
+        call(String address_book.Contact.toString())
+        && target(contact);
 
     /**
-     * Around advice that intercepts the toString() call and returns
-     * a custom-formatted string using ContactFormatter.
+     * Replaces the basic domain representation with detailed formatted
+     * output at woven call sites.
      *
-     * @param c the Contact being printed
-     * @return the formatted string representation of the contact
+     * @param contact contact being represented
+     * @return detailed contact representation
      */
-    String around(Contact c): displayCall(c) {
-        return ContactFormatter.format(c);
+    String around(Contact contact): contactDisplay(contact) {
+        return ContactFormatter.format(contact);
     }
 }

@@ -1,41 +1,26 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package io;
 
 /**
- * Functional interface for converting an array of string tokens (typically
- * split from a CSV line) into a domain-specific object.
+ * Defines an operation that converts tokenized file data into a
+ * domain-specific object.
  *
- * <p>
- * Used to support generic file parsing operations. Implementations define
- * how a line of structured text is converted into an instance of a specific type.
- * </p>
+ * <p>The interface allows the generic file-parsing infrastructure to remain
+ * independent of the domain object represented by each persisted record.</p>
  *
- * @param <T> the target object type to produce from the parsed tokens
- * 
+ * @param <T> object type produced by the parser
+ *
  * @author James Stevens
- * @version 1.0
+ * @version 2.0
  * @since 2025-07-01
  */
 @FunctionalInterface
 public interface LineParser<T> {
 
     /**
-     * Parses a line of tokens into an object.
+     * Converts one tokenized record into an object.
      *
-     * @param tokens the split components of a single input line
-     * @return a new object parsed from the tokens
+     * @param tokens fields belonging to one persisted record
+     * @return parsed object, or {@code null} when the record cannot be parsed
      */
     T parse(String[] tokens);
 }
-
-

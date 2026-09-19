@@ -1,40 +1,80 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package address_aspects;
 
 import utilities.LogUtil;
 
+import java.nio.file.Path;
+
 /**
- * Aspect for logging file and directory resolution activity in the AppPaths class.
- * 
- * This aspect intercepts calls to:
- * - AppPaths.getFile(String)
- * - AppPaths.getSubDirectory(String)
- * 
- * It logs these method invocations to track usage of dynamic path resolution within the app.
+ * Logs dynamic application-path resolution.
+ *
+ * <p>This aspect demonstrates infrastructure tracing without coupling
+ * {@code AppPaths} directly to the logging subsystem. Path resolution that
+ * occurs while the logging utilities themselves are executing is excluded
+ * so logging cannot recursively trigger additional path-resolution logs.</p>
+ *
+ * @author James Stevens
+ * @version 2.0
+ * @since 2025-07-01
  */
 public aspect AppPathsLoggingAspect {
 
     /**
-     * Pointcut that matches any call to AppPaths.getFile(..) or AppPaths.getSubDirectory(..).
+     * Matches application file-path resolution performed outside the
+     * logging infrastructure.
+     *
+     * @param fileName requested relative file name
      */
-    pointcut appPathsMethodCall(): 
-        execution(* io.AppPaths.getFile(..)) || execution(* io.AppPaths.getSubDirectory(..));
+    pointcut fileResolution(String fileName):
+        execution(Path io.AppPaths.getFile(String))
+        && args(fileName)
+        && !cflow(execution(* utilities.LogUtil.*(..)))
+        && !cflow(execution(* utilities.ErrorUtil.*(..)));
 
     /**
-     * After advice that logs usage of AppPaths path-resolving methods.
-     * The message includes a standard "[AppPaths]" prefix for filtering.
+     * Logs successfully resolved file paths.
+     *
+     * @param fileName requested relative file name
+     * @param resolved resolved path
      */
-    after(): appPathsMethodCall() {
-        LogUtil.logToFile("INFO", "[AppPaths] Method called");
+    after(String fileName) returning(Path resolved):
+        fileResolution(fileName) {
+
+        LogUtil.logToFile(
+            "PATH",
+            "Resolved file '"
+                + fileName
+                + "' to "
+                + resolved
+        );
+    }
+
+    /**
+     * Matches application directory-path resolution performed outside the
+     * logging infrastructure.
+     *
+     * @param folderName requested relative directory name
+     */
+    pointcut directoryResolution(String folderName):
+        execution(Path io.AppPaths.getSubDirectory(String))
+        && args(folderName)
+        && !cflow(execution(* utilities.LogUtil.*(..)))
+        && !cflow(execution(* utilities.ErrorUtil.*(..)));
+
+    /**
+     * Logs successfully resolved directory paths.
+     *
+     * @param folderName requested relative directory name
+     * @param resolved resolved path
+     */
+    after(String folderName) returning(Path resolved):
+        directoryResolution(folderName) {
+
+        LogUtil.logToFile(
+            "PATH",
+            "Resolved directory '"
+                + folderName
+                + "' to "
+                + resolved
+        );
     }
 }

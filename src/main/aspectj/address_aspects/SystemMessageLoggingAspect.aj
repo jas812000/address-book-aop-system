@@ -1,46 +1,93 @@
-
-/*
- * Author: James Stevens
- * Date: 01 July 2025
- * Course: SWEN 656 - Advanced Software Design and Implementation
- * 
- * Copyright (c) 2025 James Stevens
- * This file is part of the Address Book project and may not be used, copied,
- * modified, or distributed without permission.
- */
-
 package address_aspects;
 
 import utilities.LogUtil;
 
 /**
- * Aspect that logs specific system messages sent to System.out.
- * 
- * This aspect intercepts any `System.out.println(String)` call
- * and logs messages that start with known debug prefixes (e.g., "[AppPaths]").
- * 
- * Logged messages are written to the general log using LogUtil.
+ * Observes significant console messages and records them through the
+ * application's logging infrastructure.
+ *
+ * <p>This aspect demonstrates AspectJ interception of output behavior without
+ * coupling command-line classes to the logging subsystem. Routine prompts and
+ * normal contact displays are intentionally ignored so the application log
+ * remains focused on operationally meaningful messages.</p>
+ *
+ * @author James Stevens
+ * @version 2.0
+ * @since 2025-07-01
  */
 public aspect SystemMessageLoggingAspect {
 
     /**
-     * Pointcut that matches all calls to `System.out.println(String)`
-     * and captures the message argument.
-     * 
-     * @param message the string being printed to System.out
+     * Matches calls to {@code System.out.println(String)} originating from
+     * the address-book application layer.
+     *
+     * @param message console message
      */
-    pointcut printlnCall(String message):
-        call(void java.io.PrintStream.println(String)) && args(message);
+    pointcut applicationMessage(String message):
+        call(void java.io.PrintStream.println(String))
+        && args(message)
+        && within(address_book..*);
 
     /**
-     * After advice that triggers after each println call.
-     * If the printed message begins with "[AppPaths]", it is logged to file.
-     * 
-     * @param message the actual message sent to System.out
+     * Logs application messages that represent warnings, failures,
+     * cancellations, or invalid user input.
+     *
+     * @param message message written to the console
      */
-    after(String message): printlnCall(message) {
-        if (message.startsWith("[AppPaths]")) {
-            LogUtil.logToFile("INFO", message);  
+    after(String message): applicationMessage(message) {
+        if (isLoggable(message)) {
+            LogUtil.logToFile(
+                classify(message),
+                message
+            );
         }
+    }
+
+    /**
+     * Determines whether a console message represents an event worth
+     * persisting.
+     *
+     * @param message console message
+     * @return {@code true} when the message should be logged
+     */
+    private boolean isLoggable(String message) {
+        if (message == null || message.isBlank()) {
+            return false;
+        }
+
+        String normalized = message.toLowerCase();
+
+        return normalized.contains("invalid")
+            || normalized.contains("error")
+            || normalized.contains("failed")
+            || normalized.contains("cancelled")
+            || normalized.contains("not found")
+            || normalized.contains("no matching");
+    }
+
+    /**
+     * Assigns an appropriate log category to an intercepted console message.
+     *
+     * @param message console message
+     * @return log category
+     */
+    private String classify(String message) {
+        String normalized = message.toLowerCase();
+
+        if (normalized.contains("error")
+                || normalized.contains("failed")) {
+
+            return "ERROR MESSAGE";
+        }
+
+        if (normalized.contains("invalid")) {
+            return "VALIDATION MESSAGE";
+        }
+
+        if (normalized.contains("cancelled")) {
+            return "CANCELLATION";
+        }
+
+        return "APPLICATION MESSAGE";
     }
 }
